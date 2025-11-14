@@ -2,6 +2,7 @@ from django.test import TestCase
 
 # Create your tests here.
 from django.contrib.auth.models import User
+from .models import Associate
 
 
 class LoginTests(TestCase):
@@ -9,7 +10,7 @@ class LoginTests(TestCase):
 		# Create a test user for successful login
 		self.username = 'testassociate'
 		self.password = 'Secr3tPass!'
-		User.objects.create_user(username=self.username, password=self.password)
+		Associate.objects.create(name=self.username, password=self.password)
 
 	def test_login_success(self):
 		resp = self.client.post('/login/', {'username': self.username, 'password': self.password})
