@@ -83,3 +83,28 @@ def select_operations(request):
         return redirect('login')
     
     return render(request, 'InventoryManagementWebApp/select_operations.html')
+
+@login_required
+def create_new_inventory_product(request):
+    """Create a new inventory product."""
+    return render(request, "InventoryManagementWebApp/create_new_inventory_product.html")
+
+@login_required
+def read_inventory_products(request):
+    """Read existing inventory products."""
+    return render(request, "InventoryManagementWebApp/read_inventory_products.html")
+
+@login_required
+def update_inventory_product_location(request):
+    """Update location for an existing inventory product."""
+    return render(request, "InventoryManagementWebApp/update_inventory_product_location.html")
+
+@login_required
+def update_inventory_product_quantity_on_pallet(request):
+    """Update quantity on pallet for an existing inventory product."""
+    return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html")
+
+@login_required
+def delete_inventory_product(request):
+    """Delete an inventory product."""
+    return render(request, "InventoryManagementWebApp/delete_inventory_product.html")

@@ -7,12 +7,11 @@
 </head>
 <body>
     <button onclick="location.href=&#39;{% url 'logout' %}&#39;">Logout</button>
-    <h1>Select Operations</h1>
-    <p>Welcome, {{ request.user.username }}! You have successfully signed in.</p>
+    <h1>Update Locations</h1>
+    <p>Welcome, {{ request.user.username }}!</p>
     <ul>
         <li><a href="{% url 'create_new_inventory_product' %}">Create New Inventory Item</a></li>
         <li><a href="{% url 'read_inventory_products' %}">Read Inventory Items</a></li>
-        <li><a href="{% url 'update_inventory_product_location' %}">Update Existing Inventory Item Location</a></li>
         <li><a href="{% url 'update_inventory_product_quantity_on_pallet' %}">Update Existing Inventory Item Quantity on Pallet</a></li>
         <li><a href="{% url 'delete_inventory_product' %}">Delete From Inventory</a></li>
     </ul>
