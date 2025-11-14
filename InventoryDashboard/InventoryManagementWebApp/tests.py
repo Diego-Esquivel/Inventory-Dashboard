@@ -23,3 +23,15 @@ class LoginTests(TestCase):
 		# invalid credentials should re-render login page (status 200) with error message
 		self.assertEqual(resp.status_code, 200)
 		self.assertContains(resp, 'Invalid username or password')
+		
+    def test_logout(self):
+        # First, log in the user
+        self.client.post('/login/', {'username': self.username, 'password': self.password})
+        # Now, log out
+        resp = self.client.get('/logout/')
+        # After logout, we should be redirected to the login page
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp.url.endswith('/login/'))
+        # Verify that the user is logged out by checking the session
+        resp = self.client.get('/select-operations/')
+        self.assertEqual(resp.status_code, 302)  # Should redirect to login since user is logged out
