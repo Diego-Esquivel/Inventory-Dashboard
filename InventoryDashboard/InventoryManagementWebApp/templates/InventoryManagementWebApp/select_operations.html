@@ -6,6 +6,7 @@
     <style>body{font-family:Arial, sans-serif;padding:24px}</style>
 </head>
 <body>
+    <button onclick="location.href=&#39;{% url 'logout' %}&#39;">Logout</button>
     <h1>Select Operations</h1>
     <p>Welcome, {{ request.user.username }}! You have successfully signed in.</p>
     <ul>
