@@ -9,6 +9,23 @@
     <button onclick="location.href=&#39;{% url 'logout' %}&#39;">Logout</button>
     <h1>Create New Inventory Item</h1>
     <p>Welcome, {{ request.user.username }}!</p>
+    <div id="messages">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <div id="create_new_inventory_product_form">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- CreateInventoryProductForm form -->
+            {{ form.as_p }}
+            <button type="submit">Create Inventory Product</button>
+        </form>
+    </div>
     <ul>
         <li><a href="{% url 'read_inventory_products' %}">Read Inventory Items</a></li>
         <li><a href="{% url 'update_inventory_product_location' %}">Update Existing Inventory Item Location</a></li>

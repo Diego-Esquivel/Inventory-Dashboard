@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-
+from .validators import validate_not_whitespace
+# Constant defining the time to wait before an item scheduled for deletion is actually deleted
 TIME_TO_WAIT_BEFORE_DELETION = 45  # days
 
 # Create your models here.
@@ -61,6 +62,7 @@ class TransactionHistory(models.Model):
 class InventoryManager(models.Manager):
     def create(self, label_id, product_description, associate, storage_location='HOLD', quantity_on_pallet=-100):
         # Override create method to create a transaction history record
+        validate_not_whitespace(label_id)
         inventory_item = super().create(label_id=label_id, storage_location=storage_location, quantity_on_pallet=quantity_on_pallet,
                        product_description=product_description
                        )
@@ -77,7 +79,7 @@ class InventoryManager(models.Manager):
 
 class Inventory(models.Model):
     record_id = models.AutoField(primary_key=True)
-    label_id = models.CharField(max_length=100)
+    label_id = models.CharField(max_length=100, blank=False, null=False, validators=[validate_not_whitespace])
     storage_location = models.CharField(max_length=4, default='HOLD')
     quantity_on_pallet = models.IntegerField(default=-100)
     product_description = models.CharField(max_length=200)
@@ -87,7 +89,7 @@ class Inventory(models.Model):
     objects = InventoryManager()
 
     def __str__(self):
-        return f"{self.product_name} - {self.quantity} units at location {self.storage_location}"
+        return f"{self.product_description} - {self.quantity_on_pallet} units at location {self.storage_location}"
 
     def update_quantity(self, new_quantity, associate):
         # Override update method to create a transaction history record

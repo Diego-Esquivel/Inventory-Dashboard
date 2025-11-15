@@ -189,3 +189,44 @@ class InventoryTests(TestCase):
         )
         self.assertIsNotNone(second_item)
         self.assertEqual(second_item.label_id, 'DUPLICATE123')
+
+class CreateNewInventoryProductViewTests(TestCase):
+    def setUp(self):
+        # Create a test associate and log in
+        self.associate = Associate.objects.create(name='inventorymanager', password='Inv3nt0ry!', is_manager=True)
+        self.associate2 = Associate.objects.create(name='testassociate', password='Secr3tPass!', is_manager=False)
+        self.client.post('/login/', {'username': 'inventorymanager', 'password': 'Inv3nt0ry!'})
+
+    def test_create_new_inventory_product_view_get(self):
+        resp = self.client.get('/create-new-inventory-product/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Create New Inventory Item')
+
+    def test_create_new_inventory_product_view_post_success(self):
+        resp = self.client.post('/create-new-inventory-product/', {
+            'label_id': 'NEWITEM123',
+            'product_description': 'New Test Product',
+            'quantity_on_pallet': 40,
+            'storage_location': 'J10'
+        })
+        # On success, we should get a 200 status with success message
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Inventory product created successfully.')
+        # Verify that the item was created in the database
+        new_item = Inventory.objects.get(label_id='NEWITEM123')
+        self.assertIsNotNone(new_item)
+        self.assertEqual(new_item.product_description, 'New Test Product')
+
+    def test_create_new_inventory_product_view_post_failure(self):
+        resp = self.client.post('/create-new-inventory-product/', {
+            'label_id': '',  # Missing label_id should cause failure
+            'product_description': 'New Test Product',
+            'quantity_on_pallet': 40,
+            'storage_location': 'J10'
+        })
+        # On failure, we should get a 200 status with error message
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Failed to create inventory product. Please try again.')
+        # Verify that the item was not created in the database
+        with self.assertRaises(Inventory.DoesNotExist):
+            Inventory.objects.get(product_description='New Test Product')
