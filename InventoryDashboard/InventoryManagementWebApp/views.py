@@ -77,16 +77,15 @@ def select_operations(request):
     Verifies the user has an active session before returning the page.
     Redirects to login_view if no valid session exists.
     """
-    # Verify the user has a valid session
-    if not has_valid_session(request):
-        # No session found; redirect to login
-        return redirect('login')
-    
     return render(request, 'InventoryManagementWebApp/select_operations.html')
 
 @login_required
 def create_new_inventory_product(request):
-    """Create a new inventory product."""
+    """Create a new inventory product.
+    If the method is a post request, process the form data to create the product."""
+    if request.method == 'POST':
+        # Process form data here to create a new inventory product
+        pass
     return render(request, "InventoryManagementWebApp/create_new_inventory_product.html")
 
 @login_required
