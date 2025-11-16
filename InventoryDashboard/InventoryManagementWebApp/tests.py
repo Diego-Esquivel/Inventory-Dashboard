@@ -271,3 +271,44 @@ class ReadInventoryProductsViewTests(TestCase):
         })
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'No inventory products found matching the criteria.')
+
+class UpdateInventoryProductLocationViewTests(TestCase):
+    def setUp(self):
+        # Create a test associate and log in
+        self.associate = Associate.objects.create(name='inventorymanager', password='Inv3nt0ry!', is_manager=True)
+        self.client.post('/login/', {'username': 'inventorymanager', 'password': 'Inv3nt0ry!'})
+        # Create some test inventory items
+        self.item1 = Inventory.objects.create(
+            label_id='ITEM001',
+            storage_location='A1',
+            quantity_on_pallet=20,
+            product_description='Test Product 1',
+            associate=self.associate
+        )
+        self.item2 = Inventory.objects.create(
+            label_id='ITEM002',
+            storage_location='B2',
+            quantity_on_pallet=30,
+            product_description='Test Product 2',
+            associate=self.associate
+        )
+
+    def test_update_inventory_product_location_view_get(self):
+        resp = self.client.get('/update-inventory-product-location/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Update Inventory Product Location')
+
+    def test_update_inventory_product_location_view_post_search_with_results(self):
+        resp = self.client.post('/update-inventory-product-location/', {
+            'label_id': 'ITEM001'
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Test Product 1')
+        self.assertNotContains(resp, 'Test Product 2')
+
+    def test_update_inventory_product_location_view_post_search_no_results(self):
+        resp = self.client.post('/update-inventory-product-location/', {
+            'label_id': 'NONEXISTENT'
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'No inventory products found matching the criteria.')

@@ -122,8 +122,33 @@ class Endpoints:
 
     @login_required
     def update_inventory_product_location(request):
-        """Update location for an existing inventory product."""
-        return render(request, "InventoryManagementWebApp/update_inventory_product_location.html")
+        """Update location for an existing inventory product.
+        If the method is a post request, it is either updating the location or searching for products to update.
+        If it is a request to search for products, it will render the products matching the criteria.
+        If it is a request to update the location, it will process the form data to update the location."""
+        read_inventory_products_form = ReadInventoryProductsForm()
+        if request.method == 'POST':
+            if 'new_storage_location' in request.POST:
+                # This is a request to update the location
+                result = Middleware._update_inventory_product_location(request.POST, request.user.associate)
+                # Get the products again to display
+                products = Middleware._read_inventory_products(request.POST, request.user.associate)
+                if result == 1:
+                    messages.success(request, "Inventory product location updated successfully.")
+                else:
+                    messages.error(request, 'Failed to update inventory product location. Please try again.')
+                return render(request, "InventoryManagementWebApp/update_inventory_product_location.html", {'form': read_inventory_products_form, 'inventory_products': products}, status=200)
+            else:
+                # This is a request to search for products to update
+                products = Middleware._read_inventory_products(request.POST, request.user.associate)
+                if products is None or len(products) == 0:
+                    # There are no products matching the criteria; re-render the form with a message
+                    messages.info(request, 'No inventory products found matching the criteria.')
+                    return render(request, "InventoryManagementWebApp/update_inventory_product_location.html", {'form': read_inventory_products_form}, status=200)
+                else:
+                    # There are products matching the criteria; render them
+                    return render(request, "InventoryManagementWebApp/update_inventory_product_location.html", {'inventory_products': products, 'form': read_inventory_products_form}, status=200)
+        return render(request, "InventoryManagementWebApp/update_inventory_product_location.html", {'form': read_inventory_products_form})
 
     @login_required
     def update_inventory_product_quantity_on_pallet(request):
@@ -161,12 +186,15 @@ class Middleware:
         """Read existing inventory products.
         Returns a list of inventory products matching the criteria.
         Extracts data from the html form data to filter the products."""
+        record_id = form_data.get('product_id')
         label_id = form_data.get('label_id')
         storage_location = form_data.get('storage_location')
         quantity_on_pallet = form_data.get('quantity_on_pallet')
         product_description = form_data.get('product_description')
         scheduled_for_deletion = form_data.get('scheduled_for_deletion')
         filters = {}
+        if record_id:
+            filters['record_id'] = int(record_id.strip())
         if label_id:
             filters['label_id__icontains'] = label_id.strip()
         if storage_location:
@@ -181,8 +209,18 @@ class Middleware:
         return Inventory.objects.filter(**filters)
 
     def _update_inventory_product_location(form_data, associate):
-        """Update location for an existing inventory product."""
-        return render(request, "InventoryManagementWebApp/update_inventory_product_location.html")
+        """Update location for an existing inventory product.
+        Extracts data from the html form data to update the product location.
+        Returns 1 on success, 0 on failure."""
+        new_location = form_data.get('new_storage_location').strip()
+        product_id = form_data.get('product_id').strip()
+        try:
+            inventory_item = Inventory.objects.get(record_id=int(product_id))
+            inventory_item.update_location(new_location, associate)
+            return 1
+        except Exception as e:
+            print(f"Error updating inventory product location: {e}")
+            return 0
 
     def _update_inventory_product_quantity_on_pallet(form_data, associate):
         """Update quantity on pallet for an existing inventory product."""

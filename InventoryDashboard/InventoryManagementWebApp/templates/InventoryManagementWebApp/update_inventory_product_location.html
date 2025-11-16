@@ -7,13 +7,84 @@
 </head>
 <body>
     <button onclick="location.href=&#39;{% url 'logout' %}&#39;">Logout</button>
-    <h1>Update Locations</h1>
+    <h1>Update Inventory Product Location</h1>
     <p>Welcome, {{ request.user.username }}!</p>
+    <div id="messages">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <div id="inventory_search_results">
+        {% if inventory_products %}
+            <h2>Search Results</h2>
+            <table>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Label ID</th>
+                    <th>Product Description</th>
+                    <th>Quantity on Pallet</th>
+                    <th>Storage Location</th>
+                    <th>Scheduled for Deletion</th>
+                </tr>
+                {% for product in inventory_products %}
+                <!-- Make row an anchor that takes makes changes the storage location item into a form -->
+                <tr id="{{product.record_id}}" onclick="display_update_product_location_form({{product.record_id}});">
+                    <td>{{ product.record_id }}</td>
+                    <td>{{ product.label_id }}</td>
+                    <td>{{ product.product_description }}</td>
+                    <td>{{ product.quantity_on_pallet }}</td>
+                    <td>{{ product.storage_location }}</td>
+                    <td>{{ product.scheduled_for_deletion }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+    <div id="update_inventory_product_location_form">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- ReadInventoryProductsForm form -->
+            {{ form.as_p }}
+            <button type="submit">Search Inventory Products</button>
+        </form>
+    </div>
     <ul>
         <li><a href="{% url 'create_new_inventory_product' %}">Create New Inventory Item</a></li>
         <li><a href="{% url 'read_inventory_products' %}">Read Inventory Items</a></li>
         <li><a href="{% url 'update_inventory_product_quantity_on_pallet' %}">Update Existing Inventory Item Quantity on Pallet</a></li>
         <li><a href="{% url 'delete_inventory_product' %}">Delete From Inventory</a></li>
     </ul>
+    <script>
+        function display_update_product_location_form(productId) {
+            var callingRow = document.getElementById(productId);
+            // If the row already contains a form, do nothing
+            if (callingRow.getElementsByTagName("form").length > 0) {
+                console.log("Form already displayed for product ID: " + productId);
+                return;
+            }
+            console.log("Displaying update form for product ID: " + productId);
+            var update_inventory_product_location_form = document.createElement("form", {
+                'method': 'post',
+                'enctype': 'multipart/form-data'
+            });
+            update_inventory_product_location_form.setAttribute('method', 'post');
+            update_inventory_product_location_form.setAttribute('enctype', 'multipart/form-data');
+            update_inventory_product_location_form.innerHTML = `
+                {% csrf_token %}
+                <label for="new_storage_location">New Storage Location:</label>
+                <input type="text" id="new_storage_location" name="new_storage_location" required>
+                <input type="hidden" id="product_id" name="product_id" value="` + productId + `">
+                <button type="submit">Update Location</button>
+            `;
+            // Replace the existing table cell with the form
+            var table_cell_to_replace = document.getElementById(productId).getElementsByTagName('td')[4];
+            table_cell_to_replace.innerHTML = '';
+            table_cell_to_replace.appendChild(update_inventory_product_location_form);
+        }
+    </script>
 </body>
 </html>
