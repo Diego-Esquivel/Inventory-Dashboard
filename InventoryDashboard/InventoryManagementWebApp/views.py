@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.http import QueryDict
 # Create your views here.
 
 
@@ -87,6 +88,7 @@ class Endpoints:
     def create_new_inventory_product(request):
         """Create a new inventory product.
         If the method is a post request, process the form data to create the product."""
+        create_new_inventory_product_form = CreateInventoryProductForm()
         if request.method == 'POST':
             # Process form data here to create a new inventory product
             result = Middleware._create_new_inventory_product(request.POST, request.user.associate)
@@ -94,18 +96,29 @@ class Endpoints:
             if result == 1:
                 # Return success message for the frontend to display in create_new_inventory_product.html
                 messages.success(request, "Inventory product created successfully.")
-                return render(request, 'InventoryManagementWebApp/create_new_inventory_product.html', {'form': CreateInventoryProductForm()}, status=200)
+                return render(request, 'InventoryManagementWebApp/create_new_inventory_product.html', {'form': create_new_inventory_product_form}, status=200)
             else:
                 messages.error(request, 'Failed to create inventory product. Please try again.')
                 # Return message for the frontend to display
-                return render(request, "InventoryManagementWebApp/create_new_inventory_product.html", status=200)
-        create_new_inventory_product_form = CreateInventoryProductForm()
+                return render(request, "InventoryManagementWebApp/create_new_inventory_product.html", {'form': create_new_inventory_product_form}, status=200)
         return render(request, "InventoryManagementWebApp/create_new_inventory_product.html", {'form': create_new_inventory_product_form})
 
     @login_required
     def read_inventory_products(request):
-        """Read existing inventory products."""
-        return render(request, "InventoryManagementWebApp/read_inventory_products.html")
+        """Read existing inventory products.
+        If the method is a post request, process the form data to filter and display products."""
+        read_inventory_products_form = ReadInventoryProductsForm()
+        if request.method == 'POST':
+            # Process form data here to read inventory products
+            products = Middleware._read_inventory_products(request.POST, request.user.associate)
+            if products is None or len(products) == 0:
+                # There are no products matching the criteria; re-render the form with a message
+                messages.info(request, 'No inventory products found matching the criteria.')
+                return render(request, "InventoryManagementWebApp/read_inventory_products.html", {'form': read_inventory_products_form}, status=200)
+            else:
+                # There are products matching the criteria; render them
+                return render(request, "InventoryManagementWebApp/read_inventory_products.html", {'inventory_products': products, 'form': read_inventory_products_form}, status=200)
+        return render(request, "InventoryManagementWebApp/read_inventory_products.html", {'form': read_inventory_products_form})
 
     @login_required
     def update_inventory_product_location(request):
@@ -123,14 +136,14 @@ class Endpoints:
         return render(request, "InventoryManagementWebApp/delete_inventory_product.html")
 
 class Middleware:
-    def _create_new_inventory_product(form_data, associate):
+    def _create_new_inventory_product(form_data:QueryDict, associate):
         """Create a new inventory product.
         Extracts data from the html form data and creates the product in the database.
         Returns 1 on success, 0 on failure."""
-        label_id = form_data.get('label_id')
-        product_description = form_data.get('product_description')
-        quantity_on_pallet = form_data.get('quantity_on_pallet')
-        storage_location = form_data.get('storage_location')
+        label_id = form_data.get('label_id').strip()
+        product_description = form_data.get('product_description').strip()
+        quantity_on_pallet = form_data.get('quantity_on_pallet').strip()
+        storage_location = form_data.get('storage_location').strip()
         try:
             Inventory.objects.create(
                 label_id=label_id,
@@ -144,23 +157,37 @@ class Middleware:
             print(f"Error creating inventory product: {e}")
             return 0
         
+    def _read_inventory_products(form_data:QueryDict, associate):
+        """Read existing inventory products.
+        Returns a list of inventory products matching the criteria.
+        Extracts data from the html form data to filter the products."""
+        label_id = form_data.get('label_id')
+        storage_location = form_data.get('storage_location')
+        quantity_on_pallet = form_data.get('quantity_on_pallet')
+        product_description = form_data.get('product_description')
+        scheduled_for_deletion = form_data.get('scheduled_for_deletion')
+        filters = {}
+        if label_id:
+            filters['label_id__icontains'] = label_id.strip()
+        if storage_location:
+            filters['storage_location__icontains'] = storage_location.strip()
+        if quantity_on_pallet:
+            filters['quantity_on_pallet'] = int(quantity_on_pallet.strip())
+        if product_description:
+            filters['product_description__icontains'] = product_description.strip()
+        if scheduled_for_deletion:
+            # If the checkbox is checked, filter for scheduled for deletion items with non-null deletion date
+            filters['scheduled_for_deletion__isnull'] = False
+        return Inventory.objects.filter(**filters)
 
-    @login_required
-    def _read_inventory_products(request):
-        """Read existing inventory products."""
-        return render(request, "InventoryManagementWebApp/read_inventory_products.html")
-
-    @login_required
-    def _update_inventory_product_location(request):
+    def _update_inventory_product_location(form_data, associate):
         """Update location for an existing inventory product."""
         return render(request, "InventoryManagementWebApp/update_inventory_product_location.html")
 
-    @login_required
-    def _update_inventory_product_quantity_on_pallet(request):
+    def _update_inventory_product_quantity_on_pallet(form_data, associate):
         """Update quantity on pallet for an existing inventory product."""
         return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html")
 
-    @login_required
-    def _delete_inventory_product(request):
+    def _delete_inventory_product(form_data, associate):
         """Delete an inventory product."""
         return render(request, "InventoryManagementWebApp/delete_inventory_product.html")

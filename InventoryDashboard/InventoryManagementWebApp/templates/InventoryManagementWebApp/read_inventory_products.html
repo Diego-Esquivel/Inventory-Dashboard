@@ -9,6 +9,45 @@
     <button onclick="location.href=&#39;{% url 'logout' %}&#39;">Logout</button>
     <h1>Read Inventory Products</h1>
     <p>Welcome, {{ request.user.username }}!</p>
+    <div id="messages">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <div id="inventory_products_list">
+        <!-- Inventory products listing would go here -->
+         {% if inventory_products %}
+            <table>
+                <tr>
+                    <th>Label ID</th>
+                    <th>Product Description</th>
+                    <th>Quantity on Pallet</th>
+                    <th>Storage Location</th>
+                    <th>Scheduled for Deletion</th>
+                </tr>
+                {% for product in inventory_products %}
+                <tr>
+                    <td>{{ product.label_id }}</td>
+                    <td>{{ product.product_description }}</td>
+                    <td>{{ product.quantity_on_pallet }}</td>
+                    <td>{{ product.storage_location }}</td>
+                    <td>{{ product.scheduled_for_deletion }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+    <div id="read_inventory_products_form">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- ReadInventoryProductsForm form -->
+            {{ form.as_p }}
+            <button type="submit">Read Inventory Products</button>
+        </form>
     <ul>
         <li><a href="{% url 'create_new_inventory_product' %}">Create New Inventory Item</a></li>
         <li><a href="{% url 'update_inventory_product_location' %}">Update Existing Inventory Item Location</a></li>

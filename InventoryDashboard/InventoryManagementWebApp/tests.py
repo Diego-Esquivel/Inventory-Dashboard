@@ -230,3 +230,44 @@ class CreateNewInventoryProductViewTests(TestCase):
         # Verify that the item was not created in the database
         with self.assertRaises(Inventory.DoesNotExist):
             Inventory.objects.get(product_description='New Test Product')
+
+class ReadInventoryProductsViewTests(TestCase):
+    def setUp(self):
+        # Create a test associate and log in
+        self.associate = Associate.objects.create(name='inventorymanager', password='Inv3nt0ry!', is_manager=True)
+        self.client.post('/login/', {'username': 'inventorymanager', 'password': 'Inv3nt0ry!'})
+        # Create some test inventory items
+        Inventory.objects.create(
+            label_id='ITEM001',
+            storage_location='A1',
+            quantity_on_pallet=20,
+            product_description='Test Product 1',
+            associate=self.associate
+        )
+        Inventory.objects.create(
+            label_id='ITEM002',
+            storage_location='B2',
+            quantity_on_pallet=30,
+            product_description='Test Product 2',
+            associate=self.associate
+        )
+
+    def test_read_inventory_products_view_get(self):
+        resp = self.client.get('/read-inventory-products/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Read Inventory Products')
+
+    def test_read_inventory_products_view_post_with_results(self):
+        resp = self.client.post('/read-inventory-products/', {
+            'label_id': 'ITEM001'
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Test Product 1')
+        self.assertNotContains(resp, 'Test Product 2')
+
+    def test_read_inventory_products_view_post_no_results(self):
+        resp = self.client.post('/read-inventory-products/', {
+            'label_id': 'NONEXISTENT'
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'No inventory products found matching the criteria.')
