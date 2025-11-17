@@ -167,8 +167,33 @@ class Endpoints:
 
     @login_required
     def update_inventory_product_quantity_on_pallet(request):
-        """Update quantity on pallet for an existing inventory product."""
-        return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html")
+        """Update quantity on pallet for an existing inventory product.
+        If the method is a post request, it is either updating the quantity or searching for products to update.
+        If it is a request to search for products, it will render the products matching the criteria.
+        If it is a request to update the quantity, it will process the form data to update the quantity."""
+        read_inventory_products_form = ReadInventoryProductsForm()
+        if request.method == 'POST':
+            if 'new_quantity' in request.POST:
+                # This is a request to update the location
+                result = Middleware._update_inventory_product_quantity_on_pallet(request.POST, request.user.associate)
+                # Get the products again to display
+                products = Middleware._read_inventory_products(request.POST, request.user.associate)
+                if result == 1:
+                    messages.success(request, "Inventory product quantity updated successfully.")
+                else:
+                    messages.error(request, 'Failed to update inventory product quantity. Please try again.')
+                return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html", {'form': read_inventory_products_form, 'inventory_products': products}, status=200)
+            else:
+                # This is a request to search for products to update
+                products = Middleware._read_inventory_products(request.POST, request.user.associate)
+                if products is None or len(products) == 0:
+                    # There are no products matching the criteria; re-render the form with a message
+                    messages.info(request, 'No inventory products found matching the criteria.')
+                    return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html", {'form': read_inventory_products_form}, status=200)
+                else:
+                    # There are products matching the criteria; render them
+                    return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html", {'inventory_products': products, 'form': read_inventory_products_form}, status=200)
+        return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html", {'form': read_inventory_products_form})
 
     @login_required
     def delete_inventory_product(request):
@@ -227,19 +252,31 @@ class Middleware:
         """Update location for an existing inventory product.
         Extracts data from the html form data to update the product location.
         Returns 1 on success, 0 on failure."""
-        new_location = form_data.get('new_storage_location').strip()
-        product_id = form_data.get('product_id').strip()
+        new_location = form_data.get('new_storage_location')
+        product_id = form_data.get('product_id')
         try:
-            inventory_item = Inventory.objects.get(record_id=int(product_id))
-            inventory_item.update_location(new_location, associate)
+            inventory_item = Inventory.objects.get(record_id=int(product_id.strip()))
+            inventory_item.update_location(new_location.strip(), associate)
             return 1
         except Exception as e:
             print(f"Error updating inventory product location: {e}")
             return 0
 
     def _update_inventory_product_quantity_on_pallet(form_data, associate):
-        """Update quantity on pallet for an existing inventory product."""
-        return render(request, "InventoryManagementWebApp/update_inventory_product_quantity_on_pallet.html")
+        """Update quantity on pallet for an existing inventory product.
+        Extracts data from the html form data to update the product quantity.
+        Returns 1 on success, 0 on failure."""
+        new_quantity = form_data.get('new_quantity')
+        product_id = form_data.get('product_id')
+        try:
+            if int(new_quantity.strip()) < 0:
+                raise ValueError("Quantity on pallet cannot be negative.")
+            inventory_item = Inventory.objects.get(record_id=int(product_id.strip()))
+            inventory_item.update_quantity(int(new_quantity.strip()), associate)
+            return 1
+        except Exception as e:
+            print(f"Error updating inventory product quantity: {e}")
+            return 0
 
     def _delete_inventory_product(form_data, associate):
         """Delete an inventory product."""
