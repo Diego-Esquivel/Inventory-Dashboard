@@ -23,6 +23,7 @@
          {% if inventory_products %}
             <table>
                 <tr>
+                    <th hidden="True">Record ID</th>
                     <th>Label ID</th>
                     <th>Product Description</th>
                     <th>Quantity on Pallet</th>
@@ -31,11 +32,13 @@
                 </tr>
                 {% for product in inventory_products %}
                 <tr>
+                    <td hidden="True">{{ product.record_id }}</td>
                     <td>{{ product.label_id }}</td>
                     <td>{{ product.product_description }}</td>
                     <td>{{ product.quantity_on_pallet }}</td>
                     <td>{{ product.storage_location }}</td>
                     <td>{{ product.scheduled_for_deletion }}</td>
+                    <td><a href="{% url 'read_inventory_product' %}?q={{product.record_id}}">See Details</a></td>
                 </tr>
                 {% endfor %}
             </table>

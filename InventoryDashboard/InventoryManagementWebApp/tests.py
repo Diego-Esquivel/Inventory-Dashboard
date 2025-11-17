@@ -312,3 +312,35 @@ class UpdateInventoryProductLocationViewTests(TestCase):
         })
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'No inventory products found matching the criteria.')
+
+class ReadInventoryProductViewTests(TestCase):
+    def setUp(self):
+        # Create a test associate and log in
+        self.associate = Associate.objects.create(name='inventorymanager', password='Inv3nt0ry!', is_manager=True)
+        self.client.post('/login/', {'username': 'inventorymanager', 'password': 'Inv3nt0ry!'})
+        # Create a test inventory item
+        self.inventory_item = Inventory.objects.create(
+            label_id='ITEM123',
+            storage_location='A1',
+            quantity_on_pallet=50,
+            product_description='Test Product',
+            associate=self.associate
+        )
+
+    def test_read_inventory_product_view_get(self):
+        resp = self.client.get('/read-inventory-product/')
+        # Verify redirected to read inventory products page
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, '/read-inventory-products/')
+
+    def test_read_inventory_product_view_get_found(self):
+        resp = self.client.get('/read-inventory-product/?q={}'.format(self.inventory_item.record_id))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Test Product')
+        self.assertContains(resp, 'ITEM123')
+
+    def test_read_inventory_product_view_get_not_found(self):
+        resp = self.client.get('/read-inventory-product/', {'q': 9999})  # Assuming 9999 does not exist
+        # Verify redirected to read inventory products page
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, '/read-inventory-products/')

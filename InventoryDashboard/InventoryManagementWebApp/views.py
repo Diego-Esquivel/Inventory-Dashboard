@@ -119,6 +119,21 @@ class Endpoints:
                 # There are products matching the criteria; render them
                 return render(request, "InventoryManagementWebApp/read_inventory_products.html", {'inventory_products': products, 'form': read_inventory_products_form}, status=200)
         return render(request, "InventoryManagementWebApp/read_inventory_products.html", {'form': read_inventory_products_form})
+    
+    @login_required
+    def read_inventory_product(request):
+        """Read a single existing inventory product.
+        Extract the product ID from the query parameters and display the product details."""
+        record_id = request.GET.get('q')
+        if record_id:
+            try:
+                product = Inventory.objects.get(record_id=int(record_id.strip()))
+                transaction_history = TransactionHistory.objects.filter(inventory_item=product).order_by('-timestamp')
+                return render(request, "InventoryManagementWebApp/read_inventory_product.html", {'inventory_product': product, 'transaction_history': transaction_history})
+            except Inventory.DoesNotExist:
+                messages.error(request, f'No inventory product found with Record ID: {record_id}.')
+                return redirect('read_inventory_products')
+        return redirect('read_inventory_products')
 
     @login_required
     def update_inventory_product_location(request):

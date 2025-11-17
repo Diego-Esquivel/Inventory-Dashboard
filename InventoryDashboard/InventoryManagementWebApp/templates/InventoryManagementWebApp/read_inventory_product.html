@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Select Operations</title>
+    <style>body{font-family:Arial, sans-serif;padding:24px}</style>
+</head>
+<body>
+    <button onclick="location.href=&#39;{% url 'logout' %}&#39;">Logout</button>
+    <h1>Read Inventory Product Details</h1>
+    <p>Welcome, {{ request.user.username }}!</p>
+    <div id="inventory_product_details">
+        <!-- Inventory products listing would go here -->
+         {% if inventory_product %}
+            <table>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Label ID</th>
+                    <th>Product Description</th>
+                    <th>Quantity on Pallet</th>
+                    <th>Storage Location</th>
+                    <th>Scheduled for Deletion</th>
+                </tr>
+                <tr>
+                    <td>{{ inventory_product.record_id }}</td>
+                    <td>{{ inventory_product.label_id }}</td>
+                    <td>{{ inventory_product.product_description }}</td>
+                    <td>{{ inventory_product.quantity_on_pallet }}</td>
+                    <td>{{ inventory_product.storage_location }}</td>
+                    <td>{{ inventory_product.scheduled_for_deletion }}</td>
+                </tr>
+                <tr>
+                    <th>Transaction History</th>
+                </tr>
+                <tr>
+                    <th>Action Name</th>
+                    <th>Performed By</th>
+                    <th>Change</th>
+                    <th>Timestamp</th>
+                </tr>
+                {% for transaction in transaction_history %}
+                <tr>
+                    <td>{{ transaction.action_name }}</td>
+                    <td>{{ transaction.performed_by }}</td>
+                    {% if transaction.action_name == "MOVE" %}
+                    <td>{{ transaction.previous_location }} -> {{ transaction.new_location }}</td>
+                    {% else %}
+                    <td>{{ transaction.previous_quantity }} -> {{ transaction.new_quantity }}</td>
+                    {% endif %}
+                    <td>{{ transaction.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+    <ul>
+        <li><a href="{% url 'create_new_inventory_product' %}">Create New Inventory Item</a></li>
+        <li><a href="{% url 'read_inventory_products' %}">Read Inventory Items</a></li>
+        <li><a href="{% url 'update_inventory_product_location' %}">Update Existing Inventory Item Location</a></li>
+        <li><a href="{% url 'update_inventory_product_quantity_on_pallet' %}">Update Existing Inventory Item Quantity on Pallet</a></li>
+        <li><a href="{% url 'delete_inventory_product' %}">Delete From Inventory</a></li>
+    </ul>
+</body>
+</html>

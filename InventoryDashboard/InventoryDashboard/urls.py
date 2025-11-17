@@ -26,6 +26,7 @@ urlpatterns = [
     path('select-operations/', views.select_operations, name='select_operations'),
     path('create-new-inventory-product/', views.create_new_inventory_product, name='create_new_inventory_product'),
     path('read-inventory-products/', views.read_inventory_products, name='read_inventory_products'),
+    path('read-inventory-product/', views.read_inventory_product, name='read_inventory_product'),
     path('update-inventory-product-location/', views.update_inventory_product_location, name='update_inventory_product_location'),
     path('update-inventory-product-quantity-on-pallet/', views.update_inventory_product_quantity_on_pallet, name='update_inventory_product_quantity_on_pallet'),
     path('delete-inventory-product/', views.delete_inventory_product, name='delete_inventory_product'),
